@@ -1,9 +1,9 @@
 import torch
 import argparse
 
-from encoders import TFREncoder
-from decoders import TFRDecoder
-from vae import VAE
+from modules.encoders import TFREncoder
+from modules.decoders import TFRDecoder
+from modules.vae import VAE
 from utils import logging, subsequent_mask
 
 parser = argparse.ArgumentParser()

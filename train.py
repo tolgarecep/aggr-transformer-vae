@@ -5,9 +5,9 @@ import os
 import argparse
 import pickle
 
-from encoders import TFREncoder
-from decoders import TFRDecoder
-from vae import VAE
+from modules.encoders import TFREncoder
+from modules.decoders import TFRDecoder
+from modules.vae import VAE
 from utils import logging, subsequent_mask, make_std_mask
 
 parser = argparse.ArgumentParser()
