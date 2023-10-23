@@ -27,4 +27,6 @@ class TFREncoder(EncoderBase):
         h = self.stack(x, src_mask)
         mu, logvar = self.h2distr(h[:, 0, :]).chunk(2, -1)
         kl_loss = 0.5 * (mu.pow(2) + logvar.exp() - logvar - 1).sum(dim=1)
-        return reparam(mu, logvar).unsqueeze(1), kl_loss.mean(dim=-1), mu
+        return reparam(mu, logvar).unsqueeze(1), \
+               kl_loss.mean(dim=-1), \
+               mu

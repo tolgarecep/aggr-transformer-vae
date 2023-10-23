@@ -5,17 +5,19 @@ import math
 class DecoderBase(nn.Module):
     def __init__(self, args):
         super().__init__()
-        self.lut = nn.Embedding(args.vocab, args.d_model)
+        self.d_z = args.d_z
         self.d_model = args.d_model
+        self.lut = nn.Embedding(args.vocab, args.d_model)
         self.z2mem = nn.Linear(args.d_z, args.d_model)
         self.proj = nn.Linear(args.d_model, args.vocab)
-        self.d_z = args.d_z
-        self.crit = nn.CrossEntropyLoss()
+        self.crit = nn.CrossEntropyLoss(reduction='none')
 
     def eval_likeli(self, src, z):
+        bsz, nsample, _ = z.size()
         tgt = src[:, :-1]
         y = src[:, 1:]
-        bsz, nsample, _ = z.size()
+        _, L = y.size()
+        y = y.unsqueeze(1).expand(bsz, nsample, L).contiguous().view(-1)
         logits = self.forward(tgt, z)
         loss = self.crit(logits.reshape(-1, logits.size(2)), y.reshape(-1))
         return loss.view(bsz, nsample, -1).sum(-1)
@@ -26,11 +28,10 @@ class TFRDecoder(DecoderBase):
         self.stack = nn.TransformerDecoder(nn.TransformerDecoderLayer(
             d_model=args.d_model, nhead=args.nhead, dim_feedforward=args.d_ff, 
             dropout=args.dropout, batch_first=True), args.nlayers)
-        
+
     def forward(self, tgt, z, tgt_mask=None, mem_mask=None):
         bsz, L = tgt.size()
         _, nsample, d_z = z.size()
-
         x = self.lut(tgt) * math.sqrt(self.d_model)
         if nsample != 1:
             x = x.unsqueeze(1).repeat(1, nsample, 1, 1).view(

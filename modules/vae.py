@@ -23,20 +23,24 @@ class VAE(nn.Module):
         return self.decoder(tgt, z, tgt_mask, mem_mask)
 
     def calc_inference_mean(self, plot_data):
-        return self.encoder(plot_data, None)[2] 
-    def calc_joint(self, plot_data, grid_z):
-        log_prior = self.prior.log_prob(grid_z).sum(dim=-1)
-        log_gen = self.decoder.eval_likeli(plot_data, grid_z) # TODO: must return a tensor of shape (bsz, k**2)
-        return log_prior + log_gen
-    def calc_log_posterior(self, plot_data, grid_z):
-        bsz = plot_data.size(0)
-        grid_z = grid_z.unsqueeze(0).repeat(bsz, 1, 1)
-        log_joint = self.calc_joint(self, plot_data, grid_z)
-        log_norm = log_joint.exp().sum(dim=1, keepdim=True).log() 
-        # normalizing value for each sample in batch
-        log_post = log_joint - log_norm
-        return log_post
+        return self.encoder(plot_data, None)[2]
+
     def calc_posterior_mean(self, plot_data, grid_z):
+        """returns E_{z ~ p(z|x)}[z] = Σ_{z_i ∈ C}[z_i * p(z_i|x)]"""
         log_post = self.calc_log_posterior(plot_data, grid_z)
         post = log_post.exp()
         return torch.mul(post.unsqueeze(2), grid_z.unsqueeze(0)).sum(1)
+
+    def calc_log_posterior(self, plot_data, grid_z):
+        bsz = plot_data.size(0)
+        grid_z = grid_z.unsqueeze(0).repeat(bsz, 1, 1)
+        log_joint = self.calc_joint(plot_data, grid_z)
+        log_norm = log_joint.exp().sum(dim=1, keepdim=True).log()
+        # normalizing value for each sample in batch
+        log_post = log_joint - log_norm
+        return log_post
+
+    def calc_joint(self, plot_data, grid_z):
+        log_prior = self.prior.log_prob(grid_z).sum(dim=-1)
+        log_gen = self.decoder.eval_likeli(plot_data, grid_z)
+        return log_prior + log_gen
