@@ -15,7 +15,7 @@ class VAE(nn.Module):
         self.prior = torch.distributions.normal.Normal(loc, scale)
 
     def forward(self, src, tgt, src_mask=None, tgt_mask=None):
-        z, kl_loss, _ = self.encode(src, src_mask)
+        z, kl_loss, _, _ = self.encode(src, src_mask)
         return self.decode(tgt, z, tgt_mask, src_mask), kl_loss
     def encode(self, src, src_mask=None):
         return self.encoder(src, src_mask)
